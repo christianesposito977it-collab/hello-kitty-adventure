@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Kitty Adventure - Premium</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #ffc0e0, #ffb6d9, #ffa8d0);
+            font-family: 'Comic Sans MS', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .main-container { 
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(255, 105, 180, 0.4);
+            padding: 30px;
+            animation: popIn 0.5s ease-out;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        h1 { 
+            color: #ff69b4; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.3);
+        }
+        
+        /* SCREEN: CHARACTER SELECT */
+        #screen-char-select {
+            display: block;
+        }
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .char-card {
+            background: linear-gradient(135deg, #ffe0f0, #ffd0e8);
+            border: 4px solid #ff69b4;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.2);
+        }
+        .char-card:hover:not(.locked) {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 30px rgba(255, 105, 180, 0.4);
+        }
+        .char-card.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #ddd, #ccc);
+            border-color: #999;
+        }
+        .char-card.selected {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            transform: scale(1.08);
+            box-shadow: 0 15px 40px rgba(255, 105, 180, 0.5);
+        }
+        .char-emoji { font-size: 3.5em; margin-bottom: 10px; }
+        .char-name { 
+            font-weight: bold; 
+            color: #ff1493; 
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+        .char-card.selected .char-name { color: white; }
+        .char-progress {
+            font-size: 0.9em;
+            color: #ff69b4;
+            margin-top: 5px;
+        }
+        .char-card.selected .char-progress { color: white; }
+        .lock-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 1.5em;
+        }
+        .start-button {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            font-size: 1.3em;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
+            display: block;
+            margin: 0 auto;
+            font-family: 'Comic Sans MS', cursive;
+        }
+        .start-button:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 12px 40px rgba(255, 20, 147, 0.6);
+        }
+        .start-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* SCREEN: GAME */
+        #screen-game { display: none; }
+        .game-header {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.3);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .header-top h2 { font-size: 1.5em; }
+        .header-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .target-score {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .target-score-bar {
+            background: rgba(255, 255, 255, 0.3);
+            height: 25px;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .target-score-fill {
+            background: linear-gradient(90deg, #ffd700, #ffff00);
+            height: 100%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .char-display {
+            background: linear-gradient(135deg, #ffe0f0, #ffd0e8);
+            border: 3px solid #ff69b4;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .char-display-emoji { font-size: 2em; margin-right: 10px; }
+        .char-display-name { font-size: 1.2em; color: #ff1493; font-weight: bold; }
+        .canvas-area {
+            background: linear-gradient(135deg, #ffe0f0, #ffd0e8);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: inset 0 5px 15px rgba(255, 105, 180, 0.1);
+        }
+        canvas {
+            border: 4px solid #ff69b4;
+            border-radius: 15px;
+            background: white;
+            display: inline-block;
+            cursor: pointer;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #particles-canvas {
+            position: absolute;
+            pointer-events: none;
+            display: none;
+        }
+        .message {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #ffd700;
+            margin: 15px 0;
+            min-height: 30px;
+            animation: slideIn 0.4s ease-out;
+        }
+        @keyframes slideIn {
+            0% { opacity: 0; transform: translateY(-20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .combo-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            animation: comboFloat 1s ease-out forwards;
+            z-index: 1000;
+        }
+        @keyframes comboFloat {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); }
+        }
+        .buttons-area {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: linear-gradient(135deg, #ffb6d9, #ffa8d0);
+            color: #ff1493;
+            border: 3px solid #ff1493;
+            padding: 12px 25px;
+            font-size: 1em;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-family: 'Comic Sans MS', cursive;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            transform: scale(1.05);
+        }
+        .signature {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            font-family: 'Comic Sans MS', cursive;
+            font-size: 1.1em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            animation: heartBeat 1.5s infinite;
+        }
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.05); }
+            50% { transform: scale(1); }
+        }
+
+        /* SCREEN: END */
+        #screen-end { 
+            display: none;
+            text-align: center;
+        }
+        .end-content {
+            background: linear-gradient(135deg, #ffe0f0, #ffd0e8);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        .end-emoji { font-size: 5em; margin: 20px 0; }
+        .end-text { font-size: 1.3em; color: #ff1493; font-weight: bold; margin: 15px 0; }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>🎀 Hello Kitty Adventure 🎀</h1>
+
+        <!-- SCREEN 1: Character Select -->
+        <div id="screen-char-select">
+            <p style="text-align: center; font-size: 1.2em; color: #ff1493; margin-bottom: 20px;">
+                ✨ Scegli il tuo personaggio e completa i livelli! ✨
+            </p>
+            <div class="char-grid" id="char-grid"></div>
+            <button class="start-button" id="start-btn" onclick="startGame()" disabled>▶️ INIZIA L'AVVENTURA! ▶️</button>
+        </div>
+
+        <!-- SCREEN 2: Game -->
+        <div id="screen-game">
+            <div class="game-header">
+                <div class="header-top">
+                    <div>
+                        <h2>Livello <span id="level">1</span>/<span id="max-levels">20</span></h2>
+                    </div>
+                    <div class="header-stats">
+                        <div>🎯 Mosse: <span id="moves">20</span></div>
+                        <div>⭐ Score: <span id="score">0</span></div>
+                    </div>
+                    <button class="btn" onclick="backToSelect()">⬅ MENU</button>
+                </div>
+                <div class="target-score">
+                    🎯 Target: <span id="target-score">100</span> punti
+                    <div class="target-score-bar">
+                        <div class="target-score-fill" id="score-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="char-display">
+                <span class="char-display-emoji" id="game-char-emoji"></span>
+                <span class="char-display-name" id="game-char-name"></span>
+            </div>
+
+            <div class="canvas-area">
+                <canvas id="gameCanvas" width="350" height="350"></canvas>
+            </div>
+
+            <div class="message" id="message"></div>
+
+            <div class="buttons-area">
+                <button class="btn" onclick="nextLevel()" id="next-btn" style="display: none;">➡️ PROSSIMO LIVELLO ➡️</button>
+                <button class="btn" onclick="backToSelect()">⬅ INDIETRO</button>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: End -->
+        <div id="screen-end">
+            <div class="end-content">
+                <h2 style="color: #ff69b4; font-size: 2em; margin-bottom: 20px;">🎉 LIVELLO COMPLETATO! 🎉</h2>
+                <div class="end-emoji" id="end-emoji"></div>
+                <div class="end-text" id="end-text"></div>
+                <div id="loveMessage" style="display:none; font-size:2.4em; color:#ff1493; font-weight:bold; margin-top:12px;">TI VOGLIO BENE SONIA</div>
+            </div>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <button class="btn" id="continue-btn" onclick="continueBtnClick()" style="display: none;">➡️ CONTINUA ➡️</button>
+                <button class="btn" onclick="backToSelect()" style="margin-top: 10px;">⬅ MENU PRINCIPALE</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="signature">creato con codice... e un po di cuore per te -chry</div>
+
+    <script>
+        const CHARACTERS_DATA = [
+            { id: 'hello-kitty', name: 'Hello Kitty', emoji: '🎀', levels: 20, unlocked: true },
+            { id: 'my-melody', name: 'My Melody', emoji: '🐰', levels: 20, unlocked: false },
+            { id: 'badtz-maru', name: 'Badtz-Maru', emoji: '🐧', levels: 20, unlocked: false },
+            { id: 'keroppi', name: 'Keroppi', emoji: '🐸', levels: 20, unlocked: false },
+            { id: 'gudetama', name: 'Gudetama', emoji: '🥚', levels: 20, unlocked: false },
+            { id: 'pompompurin', name: 'Pompompurin', emoji: '🐕', levels: 20, unlocked: false }
+        ];
+
+        const TILES = ['🌸', '🍓', '🍰', '💎', '🌙', '⭐'];
+        const SPECIAL_BOMB = '💣';
+
+        let gameState = {
+            selectedChar: null,
+            level: 1,
+            score: 0,
+            moves: 20,
+            grid: [],
+            gridSize: 6,
+            tileSize: 58,
+            selectedTile: null,
+            isAnimating: false,
+            combo: 0,
+            targetScore: 100
+        };
+
+        let charactersProgress = {};
+
+        // Initialize
+        function initGame() {
+            loadProgress();
+            renderCharacterSelect();
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('kittyGameProgress');
+            if (saved) {
+                charactersProgress = JSON.parse(saved);
+            } else {
+                CHARACTERS_DATA.forEach(char => {
+                    charactersProgress[char.id] = { completedLevels: 0, unlocked: char.unlocked };
+                });
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('kittyGameProgress', JSON.stringify(charactersProgress));
+        }
+
+        function renderCharacterSelect() {
+            const grid = document.getElementById('char-grid');
+            grid.innerHTML = '';
+
+            CHARACTERS_DATA.forEach(char => {
+                const progress = charactersProgress[char.id];
+                const isLocked = !progress.unlocked;
+                const completed = progress.completedLevels || 0;
+
+                const card = document.createElement('div');
+                card.className = 'char-card' + (isLocked ? ' locked' : '');
+                if (gameState.selectedChar === char.id) card.classList.add('selected');
+
+                card.innerHTML = `
+                    ${isLocked ? '<div class="lock-icon">🔒</div>' : ''}
+                    <div class="char-emoji">${char.emoji}</div>
+                    <div class="char-name">${char.name}</div>
+                    <div class="char-progress">${completed}/${char.levels} 📊</div>
+                `;
+
+                if (!isLocked) {
+                    card.style.cursor = 'pointer';
+                    card.onclick = () => selectCharacter(char.id);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        function selectCharacter(charId) {
+            gameState.selectedChar = charId;
+            document.getElementById('start-btn').disabled = false;
+            renderCharacterSelect();
+        }
+
+        function startGame() {
+            if (!gameState.selectedChar) return;
+
+            gameState.level = charactersProgress[gameState.selectedChar].completedLevels + 1;
+            if (gameState.level > 20) gameState.level = 20;
+
+            gameState.score = 0;
+            gameState.combo = 0;
+            
+            document.getElementById('screen-char-select').style.display = 'none';
+            document.getElementById('screen-game').style.display = 'block';
+            document.getElementById('screen-end').style.display = 'none';
+
+            playLevel();
+        }
+
+        function playLevel() {
+            const difficulty = Math.min(gameState.level, 15);
+            gameState.moves = 15 + (difficulty * 1.5);
+            gameState.targetScore = 300 + (gameState.level * 150);
+            gameState.selectedTile = null;
+            gameState.isAnimating = false;
+            gameState.combo = 0;
+
+            const char = CHARACTERS_DATA.find(c => c.id === gameState.selectedChar);
+            document.getElementById('game-char-emoji').textContent = char.emoji;
+            document.getElementById('game-char-name').textContent = char.name;
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('max-levels').textContent = char.levels;
+            document.getElementById('moves').textContent = gameState.moves;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('target-score').textContent = gameState.targetScore;
+            document.getElementById('message').textContent = '';
+            document.getElementById('next-btn').style.display = 'none';
+
+            generateGrid();
+            draw();
+        }
+
+        function generateGrid() {
+            gameState.grid = [];
+            for (let i = 0; i < gameState.gridSize; i++) {
+                gameState.grid[i] = [];
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    gameState.grid[i][j] = TILES[Math.floor(Math.random() * TILES.length)];
+                }
+            }
+        }
+
+        function draw() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const size = gameState.tileSize;
+            for (let i = 0; i < gameState.gridSize; i++) {
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    const x = i * size;
+                    const y = j * size;
+
+                    ctx.fillStyle = j % 2 === i % 2 ? '#fff0f5' : '#ffe0f0';
+                    ctx.fillRect(x, y, size, size);
+                    ctx.strokeStyle = '#ff69b4';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, size, size);
+
+                    if (gameState.grid[i][j]) {
+                        ctx.font = 'bold 35px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(gameState.grid[i][j], x + size / 2, y + size / 2);
+                    }
+
+                    if (gameState.selectedTile && gameState.selectedTile.x === i && gameState.selectedTile.y === j) {
+                        ctx.strokeStyle = '#ff1493';
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x, y, size, size);
+                    }
+                }
+            }
+        }
+
+        document.getElementById('gameCanvas').onclick = function(e) {
+            if (gameState.isAnimating || gameState.moves <= 0) return;
+
+            const rect = e.target.getBoundingClientRect();
+            const size = gameState.tileSize;
+            const x = Math.floor((e.clientX - rect.left) / size);
+            const y = Math.floor((e.clientY - rect.top) / size);
+
+            if (x < 0 || x >= gameState.gridSize || y < 0 || y >= gameState.gridSize) return;
+
+            if (gameState.selectedTile) {
+                if (gameState.selectedTile.x === x && gameState.selectedTile.y === y) {
+                    gameState.selectedTile = null;
+                } else {
+                    const dx = Math.abs(gameState.selectedTile.x - x);
+                    const dy = Math.abs(gameState.selectedTile.y - y);
+                    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+                        swap(gameState.selectedTile.x, gameState.selectedTile.y, x, y);
+                    }
+                }
+            } else {
+                gameState.selectedTile = { x, y };
+            }
+            draw();
+        };
+
+        function swap(x1, y1, x2, y2) {
+            gameState.isAnimating = true;
+            gameState.moves--; // SCALARE SEMPRE, anche con match
+
+            const temp = gameState.grid[x1][y1];
+            gameState.grid[x1][y1] = gameState.grid[x2][y2];
+            gameState.grid[x2][y2] = temp;
+
+            setTimeout(() => {
+                gameState.combo = 0;
+                const hadMatch = check();
+                
+                // Se non c'è match, il punteggio non sale (ma la mossa è già scalata)
+                if (!hadMatch && gameState.moves <= 0) {
+                    levelFailed();
+                }
+                
+                gameState.selectedTile = null;
+            }, 150);
+        }
+
+        function check() {
+            let matched = new Set();
+
+            // Horizontal
+            for (let i = 0; i < gameState.gridSize; i++) {
+                for (let j = 0; j < gameState.gridSize - 2; j++) {
+                    if (gameState.grid[i][j] && gameState.grid[i][j] !== SPECIAL_BOMB &&
+                        gameState.grid[i][j] === gameState.grid[i][j + 1] &&
+                        gameState.grid[i][j] === gameState.grid[i][j + 2]) {
+                        matched.add(i + ',' + j);
+                        matched.add(i + ',' + (j + 1));
+                        matched.add(i + ',' + (j + 2));
+                    }
+                }
+            }
+
+            // Vertical
+            for (let i = 0; i < gameState.gridSize - 2; i++) {
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    if (gameState.grid[i][j] && gameState.grid[i][j] !== SPECIAL_BOMB &&
+                        gameState.grid[i][j] === gameState.grid[i + 1][j] &&
+                        gameState.grid[i][j] === gameState.grid[i + 2][j]) {
+                        matched.add(i + ',' + j);
+                        matched.add((i + 1) + ',' + j);
+                        matched.add((i + 2) + ',' + j);
+                    }
+                }
+            }
+
+            if (matched.size > 0) {
+                // Se mosse finite, non contare i punti
+                if (gameState.moves <= 0) {
+                    return false;
+                }
+                
+                gameState.combo++;
+                let points = matched.size * 10 * gameState.combo;
+                gameState.score += points;
+
+                if (gameState.combo > 1) {
+                    createComboDisplay(gameState.combo + 'x COMBO!');
+                }
+
+                // Check for 4+ matches -> create bomb
+                matched.forEach(pos => {
+                    const [i, j] = pos.split(',').map(Number);
+                    const neighbors = countNeighborsInMatch(i, j, matched);
+                    if (neighbors >= 3) {
+                        gameState.grid[i][j] = SPECIAL_BOMB;
+                    } else {
+                        gameState.grid[i][j] = null;
+                    }
+                });
+
+                // Explode bombs
+                for (let i = 0; i < gameState.gridSize; i++) {
+                    for (let j = 0; j < gameState.gridSize; j++) {
+                        if (gameState.grid[i][j] === SPECIAL_BOMB) {
+                            explodeBomb(i, j);
+                        }
+                    }
+                }
+
+                // Drop tiles with animation
+                dropTiles();
+
+                setTimeout(() => {
+                    fillEmpty();
+                    updateScore();
+                    
+                    // CHECK SE HA RAGGIUNTO TARGET SCORE
+                    if (gameState.score >= gameState.targetScore) {
+                        levelComplete();
+                    } else if (gameState.moves <= 0) {
+                        levelFailed();
+                    } else {
+                        check();
+                    }
+                }, 300);
+                
+                return true;
+            } else {
+                gameState.isAnimating = false;
+                updateScore();
+                
+                if (gameState.moves <= 0 && gameState.score < gameState.targetScore) {
+                    levelFailed();
+                }
+                
+                return false;
+            }
+        }
+
+        function countNeighborsInMatch(x, y, matched) {
+            let count = 0;
+            if (matched.has((x + 1) + ',' + y)) count++;
+            if (matched.has((x - 1) + ',' + y)) count++;
+            if (matched.has(x + ',' + (y + 1))) count++;
+            if (matched.has(x + ',' + (y - 1))) count++;
+            return count;
+        }
+
+        function explodeBomb(cx, cy) {
+            for (let i = Math.max(0, cx - 1); i <= Math.min(gameState.gridSize - 1, cx + 1); i++) {
+                for (let j = Math.max(0, cy - 1); j <= Math.min(gameState.gridSize - 1, cy + 1); j++) {
+                    if (!(i === cx && j === cy)) {
+                        gameState.grid[i][j] = null;
+                    }
+                }
+            }
+            gameState.grid[cx][cy] = null;
+            createComboDisplay('💥 BOOM!');
+            gameState.score += 50;
+        }
+
+        function dropTiles() {
+            for (let j = 0; j < gameState.gridSize; j++) {
+                for (let i = gameState.gridSize - 1; i > 0; i--) {
+                    if (!gameState.grid[i][j]) {
+                        for (let k = i - 1; k >= 0; k--) {
+                            if (gameState.grid[k][j]) {
+                                gameState.grid[i][j] = gameState.grid[k][j];
+                                gameState.grid[k][j] = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function fillEmpty() {
+            for (let i = 0; i < gameState.gridSize; i++) {
+                for (let j = 0; j < gameState.gridSize; j++) {
+                    if (!gameState.grid[i][j]) {
+                        gameState.grid[i][j] = TILES[Math.floor(Math.random() * TILES.length)];
+                    }
+                }
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('moves').textContent = gameState.moves;
+            const percent = Math.min((gameState.score / gameState.targetScore) * 100, 100);
+            document.getElementById('score-fill').style.width = percent + '%';
+            if (percent > 0) {
+                document.getElementById('score-fill').textContent = gameState.score + '/' + gameState.targetScore;
+            }
+            draw();
+        }
+
+        function createComboDisplay(text) {
+            const div = document.createElement('div');
+            div.className = 'combo-display';
+            div.textContent = text;
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 1000);
+        }
+
+        function levelComplete() {
+            charactersProgress[gameState.selectedChar].completedLevels = gameState.level;
+            
+            // Unlock next character
+            if (gameState.level === 20) {
+                const nextCharIndex = CHARACTERS_DATA.findIndex(c => c.id === gameState.selectedChar) + 1;
+                if (nextCharIndex < CHARACTERS_DATA.length) {
+                    charactersProgress[CHARACTERS_DATA[nextCharIndex].id].unlocked = true;
+                }
+            }
+
+            saveProgress();
+
+            document.getElementById('screen-game').style.display = 'none';
+            document.getElementById('screen-end').style.display = 'block';
+
+            const char = CHARACTERS_DATA.find(c => c.id === gameState.selectedChar);
+            document.getElementById('end-emoji').textContent = char.emoji;
+            document.getElementById('end-text').textContent = 
+                `Livello ${gameState.level} Completato!\nScore: ${gameState.score}/${gameState.targetScore}`;
+
+            if (gameState.level === 20) {
+                document.getElementById('end-text').textContent += 
+                    `\n\n🎉 ${char.name} Completato!\n${CHARACTERS_DATA[CHARACTERS_DATA.findIndex(c => c.id === gameState.selectedChar) + 1]?.name || 'Tutti i personaggi'} Sbloccato!`;
+                document.getElementById('continue-btn').textContent = '⬅ TORNA AL MENU';
+                const loveEl = document.getElementById('loveMessage');
+                loveEl.style.display = 'block';
+            } else {
+                document.getElementById('continue-btn').textContent = '➡️ CONTINUA ➡️';
+                const loveEl = document.getElementById('loveMessage');
+                loveEl.style.display = 'none';
+            }
+            
+            document.getElementById('continue-btn').style.display = 'inline-block';
+        }
+
+        function levelFailed() {
+            gameState.score = 0;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('message').textContent = '❌ Mosse finite! Punteggio azzerato!';
+            setTimeout(() => {
+                playLevel();
+            }, 2500);
+        }
+
+        function nextLevel() {
+            if (gameState.level >= 20) {
+                backToSelect();
+            } else {
+                gameState.level++;
+                playLevel();
+            }
+        }
+
+        function backToSelect() {
+            if (confirm('Tornare al menu principale?')) {
+                document.getElementById('screen-char-select').style.display = 'block';
+                document.getElementById('screen-game').style.display = 'none';
+                document.getElementById('screen-end').style.display = 'none';
+                renderCharacterSelect();
+            }
+        }
+
+        function continueBtnClick() {
+            if (gameState.level >= 20) {
+                backToSelect();
+            } else {
+                nextLevel();
+            }
+        }
+
+        // Initialize
+        initGame();
+    </script>
+</body>
+</html>
